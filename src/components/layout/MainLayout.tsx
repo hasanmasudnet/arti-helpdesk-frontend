@@ -13,12 +13,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings, User, BellDot } from "lucide-react";
 import { ProfileDialog } from "@/components/profile/ProfileDialog";
+import { NotificationPopover } from "@/components/notifications/NotificationPopover";
 
 const MainLayout = () => {
   const { user, logout } = useAuth();
   const [profileOpen, setProfileOpen] = React.useState(false);
+  const [unreadCount, setUnreadCount] = React.useState(3);
 
   const handleProfileUpdate = (data: any) => {
     // In a real app, this would update the user profile
@@ -29,8 +31,19 @@ const MainLayout = () => {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <div className="flex-1">
+        {/* Top Bar */}
         <div className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
           <div className="flex h-14 items-center justify-end px-4 gap-4">
+            <NotificationPopover>
+              <Button variant="ghost" size="icon" className="relative">
+                <BellDot className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </Button>
+            </NotificationPopover>
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -76,6 +89,7 @@ const MainLayout = () => {
             </DropdownMenu>
           </div>
         </div>
+
         <Outlet />
 
         <ProfileDialog

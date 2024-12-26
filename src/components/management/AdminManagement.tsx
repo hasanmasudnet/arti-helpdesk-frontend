@@ -1,10 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Settings, Users, Shield, Database, Bell, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const AdminCard = ({ title, description, icon: Icon, onClick }) => (
   <Card className="hover:shadow-md transition-all cursor-pointer">
@@ -26,6 +42,7 @@ const AdminCard = ({ title, description, icon: Icon, onClick }) => (
 const AdminManagement = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("general");
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [apiConfig, setApiConfig] = useState({
     openaiKey: "",
     openaiModel: "gpt-4",
@@ -39,6 +56,12 @@ const AdminManagement = () => {
     senderEmail: "",
   });
 
+  const [notificationForm, setNotificationForm] = useState({
+    channel: "general",
+    message: "",
+    type: "announcement",
+  });
+
   const handleSaveApiConfig = () => {
     console.log("Saving API config:", apiConfig);
   };
@@ -47,11 +70,16 @@ const AdminManagement = () => {
     console.log("Saving Email config:", emailConfig);
   };
 
+  const handleSendNotification = useCallback(async () => {
+    // In a real app, this would send the notification to your backend
+    console.log("Sending notification:", notificationForm);
+    setNotificationDialogOpen(false);
+  }, [notificationForm]);
+
   const sections = [
     {
       title: "System Settings",
-      description:
-        "Configure global system settings, preferences, and defaults",
+      description: "Configure global system settings and preferences",
       icon: Settings,
       onClick: () => console.log("System Settings clicked"),
     },
@@ -63,8 +91,7 @@ const AdminManagement = () => {
     },
     {
       title: "Security",
-      description:
-        "Configure security settings, authentication, and access control",
+      description: "Configure security settings and access control",
       icon: Shield,
       onClick: () => console.log("Security clicked"),
     },
@@ -76,9 +103,9 @@ const AdminManagement = () => {
     },
     {
       title: "Notifications",
-      description: "Configure system notifications and alerts",
+      description: "Send announcements and manage channels",
       icon: Bell,
-      onClick: () => console.log("Notifications clicked"),
+      onClick: () => setNotificationDialogOpen(true),
     },
     {
       title: "Integrations",
@@ -95,6 +122,13 @@ const AdminManagement = () => {
           <h1 className="text-2xl font-semibold text-foreground">
             Admin Dashboard
           </h1>
+          <Button
+            onClick={() => setNotificationDialogOpen(true)}
+            className="gap-2"
+          >
+            <Bell className="h-4 w-4" />
+            Send Announcement
+          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -260,6 +294,84 @@ const AdminManagement = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog
+        open={notificationDialogOpen}
+        onOpenChange={setNotificationDialogOpen}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Send Announcement</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Channel</Label>
+              <Select
+                value={notificationForm.channel}
+                onValueChange={(value) =>
+                  setNotificationForm({ ...notificationForm, channel: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select channel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">General</SelectItem>
+                  <SelectItem value="agents">Agents Only</SelectItem>
+                  <SelectItem value="customers">Customers Only</SelectItem>
+                  <SelectItem value="product-updates">
+                    Product Updates
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Type</Label>
+              <Select
+                value={notificationForm.type}
+                onValueChange={(value) =>
+                  setNotificationForm({ ...notificationForm, type: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="announcement">Announcement</SelectItem>
+                  <SelectItem value="update">Product Update</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="alert">Alert</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Message</Label>
+              <Textarea
+                value={notificationForm.message}
+                onChange={(e) =>
+                  setNotificationForm({
+                    ...notificationForm,
+                    message: e.target.value,
+                  })
+                }
+                placeholder="Type your message here..."
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setNotificationDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSendNotification}>Send</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
