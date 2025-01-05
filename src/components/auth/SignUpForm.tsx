@@ -5,25 +5,64 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const SignUpForm = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    password_confirmation: "",
+  });
+  const [errors, setErrors] = useState({}); // Store field-specific errors
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setLoading(false);
-    navigate("/verify");
+    setErrors({}); // Clear previous errors
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.errors) {
+          setErrors(errorData.errors);
+        }
+        setLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+      console.log("Registration successful:", data);
+      setLoading(false);
+      navigate("/verify"); // Navigate to verification page on success
+    } catch (err) {
+      console.error("Error:", err);
+      setLoading(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-2">
+        {/* Full Name Field */}
         <div className="grid gap-1">
           <Label htmlFor="name">Full Name</Label>
           <Input
@@ -34,10 +73,15 @@ const SignUpForm = () => {
             autoComplete="name"
             autoCorrect="off"
             disabled={loading}
-            required
+            value={formData.name}
+            onChange={handleInputChange}
           />
+          {errors.name && (
+            <p className="text-sm text-red-500">{errors.name[0]}</p>
+          )}
         </div>
 
+        {/* Email Field */}
         <div className="grid gap-1">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -48,10 +92,15 @@ const SignUpForm = () => {
             autoComplete="email"
             autoCorrect="off"
             disabled={loading}
-            required
+            value={formData.email}
+            onChange={handleInputChange}
           />
+          {errors.email && (
+            <p className="text-sm text-red-500">{errors.email[0]}</p>
+          )}
         </div>
 
+        {/* Password Field */}
         <div className="grid gap-1">
           <Label htmlFor="password">Password</Label>
           <div className="relative">
@@ -61,7 +110,8 @@ const SignUpForm = () => {
               placeholder="••••••••"
               autoComplete="new-password"
               disabled={loading}
-              required
+              value={formData.password}
+              onChange={handleInputChange}
               className="pr-10"
             />
             <Button
@@ -79,22 +129,29 @@ const SignUpForm = () => {
               )}
             </Button>
           </div>
+          {errors.password && (
+            <p className="text-sm text-red-500">{errors.password[0]}</p>
+          )}
         </div>
 
+        {/* Confirm Password Field */}
         <div className="grid gap-1">
-          <Label htmlFor="company">Company Name (Optional)</Label>
+          <Label htmlFor="password_confirmation">Confirm Password</Label>
           <Input
-            id="company"
-            placeholder="Acme Inc."
-            type="text"
-            autoComplete="organization"
+            id="password_confirmation"
+            type={showPassword ? "text" : "password"}
+            placeholder="••••••••"
+            autoComplete="new-password"
             disabled={loading}
+            value={formData.password_confirmation}
+            onChange={handleInputChange}
           />
         </div>
       </div>
 
+      {/* Terms and Conditions */}
       <div className="flex items-center space-x-2">
-        <Checkbox id="terms" required />
+        <Checkbox id="terms" />
         <Label htmlFor="terms" className="text-sm font-normal">
           I agree to the{" "}
           <Link
@@ -113,45 +170,11 @@ const SignUpForm = () => {
         </Label>
       </div>
 
+      {/* Submit Button */}
       <Button className="w-full" disabled={loading}>
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Create Account
       </Button>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Or continue with
-          </span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <Button variant="outline" type="button" disabled={loading}>
-          <img src="/google.svg" alt="Google" className="mr-2 h-4 w-4" />
-          Google
-        </Button>
-        <Button variant="outline" type="button" disabled={loading}>
-          <img src="/github.svg" alt="GitHub" className="mr-2 h-4 w-4" />
-          GitHub
-        </Button>
-      </div>
-
-      <p className="text-center text-sm text-muted-foreground">
-        Already have an account?{" "}
-        <Link
-          to="/login"
-          className={cn(
-            "underline underline-offset-4 hover:text-primary",
-            loading && "pointer-events-none opacity-50",
-          )}
-        >
-          Sign in
-        </Link>
-      </p>
     </form>
   );
 };
