@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import apiInstance from "@/lib/apiInstance";
+import { cn } from "@/lib/utils";
 
 const SignUpForm = () => {
   const navigate = useNavigate();
@@ -16,7 +18,7 @@ const SignUpForm = () => {
     password: "",
     password_confirmation: "",
   });
-  const [errors, setErrors] = useState({}); // Store field-specific errors
+  const [errors, setErrors] = useState({});
 
   const handleInputChange = (e) => {
     setFormData({
@@ -28,37 +30,25 @@ const SignUpForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setErrors({}); // Clear previous errors
+    setErrors({});
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
+      const response = await apiInstance.post("/api/auth/register", formData);
+      console.log("Registration successful:", response.data);
+      setLoading(false);
+      navigate("/verify");
+    } catch (err) {
+      if (err.response) {
+        const errorData = err.response.data;
         if (errorData.errors) {
           setErrors(errorData.errors);
         }
-        setLoading(false);
-        return;
+      } else {
+        console.error("Error:", err);
       }
-
-      const data = await response.json();
-      console.log("Registration successful:", data);
-      setLoading(false);
-      navigate("/verify"); // Navigate to verification page on success
-    } catch (err) {
-      console.error("Error:", err);
       setLoading(false);
     }
   };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-2">
@@ -175,6 +165,18 @@ const SignUpForm = () => {
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Create Account
       </Button>
+      <p className="text-center text-sm text-muted-foreground">
+        Already have an account?{" "}
+        <Link
+          to="/login"
+          className={cn(
+            "underline underline-offset-4 hover:text-primary",
+            loading && "pointer-events-none opacity-50"
+          )}
+        >
+          Sign in
+        </Link>
+      </p>
     </form>
   );
 };

@@ -1,68 +1,105 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import apiInstance from "@/lib/apiInstance";
 
 const LoginForm = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [backendErrors, setBackendErrors] = useState({});
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-
-    try {
-      await login(formData.username, formData.password);
-      navigate("/dashboard");
-    } catch (err) {
-      setError("Invalid credentials");
+    setBackendErrors({});
+    if (!formData.email || !formData.password) {
+      setBackendErrors({
+        email: !formData.email ? ["Email is required"] : [],
+        password: !formData.password ? ["Password is required"] : [],
+      });
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+    try {
+      const response = await apiInstance.post("/api/auth/login", {
+        email: formData.email,
+        password: formData.password,
+      });
+      if (response.status === 200) {
+        localStorage.setItem("access_token", response.data.access_token);
+        navigate("/dashboard");
+      } else {
+        setError("Login failed. Please try again.");
+      }
+    } catch (err) {
+      if (err.response && err.response.status === 422) {
+        const errors = err.response.data.errors || {};
+        const userFriendlyErrors = {};
+
+        if (errors.email) {
+          userFriendlyErrors.email = errors.email[0].includes('email') ? 'Please enter a valid email address.' : 'Email is required.';
+        }
+        if (errors.password) {
+          userFriendlyErrors.password = errors.password[0].includes('password') ? 'The password is incorrect.' : 'Password is required.';
+        }
+        setBackendErrors(userFriendlyErrors);
+      } else {
+        setBackendErrors({
+          general: "Oops! Something went wrong. Please try again.",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Show general error message */}
       {error && (
         <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded">
           {error}
-          <div className="mt-2 text-xs text-muted-foreground">
-            Try these credentials:
-            <br />- admin / admin (Full access)
-            <br />- agent / agent (Limited access)
-            <br />- customer / customer (Basic access)
-          </div>
         </div>
       )}
+
+      {/* Backend validation errors */}
+      {backendErrors.general && (
+        <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded">
+          {backendErrors.general}
+        </div>)}
       <div className="grid gap-2">
+        {/* Email field */}
         <div className="grid gap-1">
-          <Label htmlFor="username">Username</Label>
+          <Label htmlFor="email">Email</Label>
           <Input
-            id="username"
-            placeholder="admin"
-            type="text"
+            id="email"
+            placeholder="Email"
+            type="email"
             autoCapitalize="none"
             autoCorrect="off"
             disabled={loading}
-            value={formData.username}
+            value={formData.email}
             onChange={(e) =>
-              setFormData({ ...formData, username: e.target.value })
+              setFormData({ ...formData, email: e.target.value })
             }
             required
           />
+          {backendErrors.email && (
+            <div className="text-sm text-red-500">{backendErrors.email}</div>
+          )}
         </div>
 
+        {/* Password field */}
         <div className="grid gap-1">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
@@ -102,6 +139,9 @@ const LoginForm = () => {
               )}
             </Button>
           </div>
+          {backendErrors.password && (
+            <div className="text-sm text-red-500">{backendErrors.password}</div>
+          )}
         </div>
       </div>
 
@@ -116,7 +156,7 @@ const LoginForm = () => {
           to="/signup"
           className={cn(
             "underline underline-offset-4 hover:text-primary",
-            loading && "pointer-events-none opacity-50",
+            loading && "pointer-events-none opacity-50"
           )}
         >
           Sign up

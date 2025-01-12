@@ -11,12 +11,12 @@ interface OTPVerificationProps {
 
 const OTPVerification = ({
   email = "user@example.com",
-  onVerify = () => {},
-  onResend = () => {},
+  onVerify = () => { },
+  onResend = () => { },
 }: OTPVerificationProps) => {
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [loading, setLoading] = useState(false);
-  const [timer, setTimer] = useState(30);
+  const [timer, setTimer] = useState(300);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -69,7 +69,7 @@ const OTPVerification = ({
   };
 
   const handleResend = () => {
-    setTimer(30);
+    setTimer(300);
     onResend();
   };
 
