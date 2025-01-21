@@ -1,63 +1,54 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import apiInstance from "@/lib/apiInstance";
+import { AuthContext } from "@/lib/auth";
 
 const LoginForm = () => {
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
+
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState({ email: "", password: "", general: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [backendErrors, setBackendErrors] = useState({});
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setBackendErrors({});
-    if (!formData.email || !formData.password) {
-      setBackendErrors({
-        email: !formData.email ? ["Email is required"] : [],
-        password: !formData.password ? ["Password is required"] : [],
-      });
-      setLoading(false);
-      return;
+  const validateForm = () => {
+    const newErrors = {
+      email: formData.email ? "" : "Email is required",
+      password: formData.password ? "" : "Password is required",
+    };
+
+    if (formData.email && !/^\S+@\S+\.\S+$/.test(formData.email)) {
+      newErrors.email = "Invalid email format";
     }
-    try {
-      const response = await apiInstance.post("/api/auth/login", {
-        email: formData.email,
-        password: formData.password,
-      });
-      if (response.status === 200) {
-        localStorage.setItem("access_token", response.data.access_token);
-        navigate("/dashboard");
-      } else {
-        setError("Login failed. Please try again.");
-      }
-    } catch (err) {
-      if (err.response && err.response.status === 422) {
-        const errors = err.response.data.errors || {};
-        const userFriendlyErrors = {};
 
-        if (errors.email) {
-          userFriendlyErrors.email = errors.email[0].includes('email') ? 'Please enter a valid email address.' : 'Email is required.';
-        }
-        if (errors.password) {
-          userFriendlyErrors.password = errors.password[0].includes('password') ? 'The password is incorrect.' : 'Password is required.';
-        }
-        setBackendErrors(userFriendlyErrors);
-      } else {
-        setBackendErrors({
-          general: "Oops! Something went wrong. Please try again.",
-        });
-      }
+    setErrors((prev) => ({ ...prev, ...newErrors }));
+    return !newErrors.email && !newErrors.password;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+    setErrors((prev) => ({ ...prev, [id]: "" })); // Clear field-specific errors
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      await login(formData.email, formData.password);
+      navigate("/dashboard");
+    } catch (err: any) {
+      const errorMessage = err.response?.status === 422
+        ? "Invalid credentials. Please try again."
+        : "Oops! Something went wrong. Please try again later.";
+      setErrors({ email: "", password: "", general: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -65,48 +56,29 @@ const LoginForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Show general error message */}
-      {error && (
-        <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded">
-          {error}
+      {errors.general && (
+        <div className="p-3 text-sm text-red-500 bg-red-50 border rounded">
+          {errors.general}
         </div>
       )}
-
-      {/* Backend validation errors */}
-      {backendErrors.general && (
-        <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded">
-          {backendErrors.general}
-        </div>)}
       <div className="grid gap-2">
-        {/* Email field */}
         <div className="grid gap-1">
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
-            placeholder="Email"
             type="email"
-            autoCapitalize="none"
-            autoCorrect="off"
-            disabled={loading}
+            placeholder="Email"
             value={formData.email}
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
-            required
+            onChange={handleChange}
+            disabled={loading}
+            autoComplete="email"
           />
-          {backendErrors.email && (
-            <div className="text-sm text-red-500">{backendErrors.email}</div>
-          )}
+          {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
         </div>
-
-        {/* Password field */}
         <div className="grid gap-1">
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center">
             <Label htmlFor="password">Password</Label>
-            <Link
-              to="/forgot-password"
-              className="text-sm text-muted-foreground hover:text-primary"
-            >
+            <Link to="/forgot-password" className="text-sm text-muted-foreground">
               Forgot password?
             </Link>
           </div>
@@ -115,50 +87,34 @@ const LoginForm = () => {
               id="password"
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
-              autoComplete="current-password"
-              disabled={loading}
               value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              required
+              onChange={handleChange}
+              disabled={loading}
+              autoComplete="current-password"
               className="pr-10"
             />
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-              onClick={() => setShowPassword(!showPassword)}
+              className="absolute top-0 right-0 h-full px-3"
+              onClick={() => setShowPassword((prev) => !prev)}
               disabled={loading}
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <Eye className="h-4 w-4 text-muted-foreground" />
-              )}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
-          {backendErrors.password && (
-            <div className="text-sm text-red-500">{backendErrors.password}</div>
-          )}
+          {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
         </div>
       </div>
-
       <Button className="w-full" disabled={loading}>
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Sign In
       </Button>
-
       <p className="text-center text-sm text-muted-foreground">
         Don't have an account?{" "}
-        <Link
-          to="/signup"
-          className={cn(
-            "underline underline-offset-4 hover:text-primary",
-            loading && "pointer-events-none opacity-50"
-          )}
-        >
+        <Link to="/signup" className={cn("underline", loading && "opacity-50 pointer-events-none")}>
           Sign up
         </Link>
       </p>
