@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import apiInstance from './apiInstance';
 
 type UserRole = "admin" | "agent" | "customer";
 
@@ -9,7 +8,7 @@ interface User {
   name: string;
   email: string;
   role: UserRole;
-  avatar?: string;
+  avatar: string;
 }
 
 interface AuthContextType {
@@ -19,53 +18,47 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
-export const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [userFriendlyErrors, setBackendErrors] = useState(false);
 
-  const login = async (email: string, password: string) => {
-    try {
-      const response = await apiInstance.post("/api/auth/login", { email, password });
-      if (response.status === 200) {
-        const { access_token } = response.data;
-        localStorage.setItem("access_token", access_token);
-        const userData: any = await response?.data?.user;
-        setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
-        navigate("/dashboard");
-      } else {
-        throw new Error("Unexpected response status");
-      }
-    } catch (err: any) {
-      if (err.response?.status === 422) {
-        const errors = err.response.data.errors || {};
-        const userFriendlyErrors: Record<string, string> = {};
-        if (errors.email) {
-          userFriendlyErrors.email = errors.email[0].includes("email")
-            ? "Please enter a valid email address."
-            : "Email is required.";
-        }
-        if (errors.password) {
-          userFriendlyErrors.password = errors.password[0].includes("password")
-            ? "The password is incorrect."
-            : "Password is required.";
-        }
-        setBackendErrors(userFriendlyErrors);
-      } else {
-        setBackendErrors({
-          general: "Oops! Something went wrong. Please try again.",
-        });
-      }
-    } finally {
-      setLoading(false);
+  const login = async (username: string, password: string) => {
+    // Simulate different user roles based on credentials
+    let userData: User | null = null;
+
+    if (username === "admin" && password === "admin") {
+      userData = {
+        id: "1",
+        name: "Admin User",
+        email: "admin@example.com",
+        role: "admin",
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=admin",
+      };
+    } else if (username === "agent" && password === "agent") {
+      userData = {
+        id: "2",
+        name: "Agent User",
+        email: "agent@example.com",
+        role: "agent",
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=agent",
+      };
+    } else if (username === "customer" && password === "customer") {
+      userData = {
+        id: "3",
+        name: "Customer User",
+        email: "customer@example.com",
+        role: "customer",
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=customer",
+      };
+    } else {
+      throw new Error("Invalid credentials");
     }
 
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
   };
-
 
   const logout = () => {
     setUser(null);
@@ -86,8 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         login,
         logout,
-        isAuthenticated: true,
-        // isAuthenticated: !!user,
+        isAuthenticated: !!user,
       }}
     >
       {children}
@@ -114,10 +106,6 @@ export function ProtectedRoute({
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log(user);
-    console.log(localStorage.getItem('user'));
-
-
     if (!isAuthenticated) {
       navigate("/login");
     } else if (user && !allowedRoles.includes(user.role)) {
