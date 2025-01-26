@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { apiInstance } from "@/lib/apiInstance";
 
 const generateMockProducts = (count: number, categories: any[]) => {
   return Array.from({ length: count }, (_, i) => ({
@@ -36,8 +37,12 @@ const generateMockProducts = (count: number, categories: any[]) => {
     categoryId: categories[Math.floor(Math.random() * categories.length)].id,
     description: `Description for Product ${i + 1}`,
     url: `https://example.com/product-${i + 1}`,
-    image: `https://images.unsplash.com/photo-${1460925895917 + i}?q=80&w=2426&auto=format&fit=crop`,
-    aiInstructions: `AI instructions for handling Product ${i + 1} related queries.`,
+    image: `https://images.unsplash.com/photo-${
+      1460925895917 + i
+    }?q=80&w=2426&auto=format&fit=crop`,
+    aiInstructions: `AI instructions for handling Product ${
+      i + 1
+    } related queries.`,
     activeTickets: Math.floor(Math.random() * 10),
     price: Math.floor(Math.random() * 1000) + 99,
     status: ["active", "draft", "archived"][Math.floor(Math.random() * 3)],
@@ -84,8 +89,8 @@ const ProductCard = ({ product, category, onEdit, onDelete }) => (
                 product.status === "active"
                   ? "bg-green-500/10 text-green-600"
                   : product.status === "draft"
-                    ? "bg-yellow-500/10 text-yellow-600"
-                    : "bg-gray-500/10 text-gray-600"
+                  ? "bg-yellow-500/10 text-yellow-600"
+                  : "bg-gray-500/10 text-gray-600"
               }`}
             >
               {product.status}
@@ -129,7 +134,7 @@ const ProductCard = ({ product, category, onEdit, onDelete }) => (
 
 const CategoryList = ({ categories, onEdit, onDelete, searchTerm = "" }) => {
   const filteredCategories = categories.filter((category) =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    category.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -183,7 +188,7 @@ const ProductManagement = () => {
     { id: "3", name: "Services", description: "Professional services" },
   ]);
   const [products, setProducts] = useState(() =>
-    generateMockProducts(6, categories),
+    generateMockProducts(6, categories)
   );
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -193,34 +198,41 @@ const ProductManagement = () => {
   const [categorySearchTerm, setCategorySearchTerm] = useState("");
 
   const handleAddCategory = useCallback(
-    (data) => {
-      const newCategory = {
-        id: `${categories.length + 1}`,
-        ...data,
-      };
-      setCategories((prev) => [...prev, newCategory]);
+    async (data) => {
+      console.log(data, "categories");
+      // const newCategory = {
+      //   id: `${categories.length + 1}`,
+      //   ...data,
+      // };
+      // setCategories((prev) => [...prev, newCategory]);
+      try {
+        const response = await apiInstance.post("/categories", data);
+        console.log(response, "response");
+      } catch (error) {
+        console.log(error);
+      }
     },
-    [categories],
+    [categories]
   );
 
   const handleEditCategory = useCallback((data) => {
     setCategories((prev) =>
       prev.map((category) =>
-        category.id === data.id ? { ...category, ...data } : category,
-      ),
+        category.id === data.id ? { ...category, ...data } : category
+      )
     );
   }, []);
 
   const handleDeleteCategory = useCallback((categoryId) => {
     setCategories((prev) =>
-      prev.filter((category) => category.id !== categoryId),
+      prev.filter((category) => category.id !== categoryId)
     );
     setProducts((prev) =>
       prev.map((product) =>
         product.categoryId === categoryId
           ? { ...product, categoryId: "" }
-          : product,
-      ),
+          : product
+      )
     );
   }, []);
 
@@ -235,14 +247,14 @@ const ProductManagement = () => {
       };
       setProducts((prev) => [...prev, newProduct]);
     },
-    [products],
+    [products]
   );
 
   const handleEditProduct = useCallback((data) => {
     setProducts((prev) =>
       prev.map((product) =>
-        product.id === data.id ? { ...product, ...data } : product,
-      ),
+        product.id === data.id ? { ...product, ...data } : product
+      )
     );
   }, []);
 
@@ -359,7 +371,7 @@ const ProductManagement = () => {
                       (categoryFilter === "all" ||
                         product.categoryId === categoryFilter) &&
                       (statusFilter === "all" ||
-                        product.status === statusFilter),
+                        product.status === statusFilter)
                   )
                   .sort((a, b) => {
                     if (sortBy === "name") return a.name.localeCompare(b.name);
@@ -373,7 +385,7 @@ const ProductManagement = () => {
                       key={product.id}
                       product={product}
                       category={categories.find(
-                        (c) => c.id === product.categoryId,
+                        (c) => c.id === product.categoryId
                       )}
                       onEdit={openEditDialog}
                       onDelete={handleDeleteProduct}
