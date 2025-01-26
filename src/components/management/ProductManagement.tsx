@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -183,13 +183,15 @@ const ProductManagement = () => {
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categories, setCategories] = useState([
-    { id: "1", name: "Software", description: "Software products" },
-    { id: "2", name: "Hardware", description: "Hardware products" },
-    { id: "3", name: "Services", description: "Professional services" },
+    { id: "1", name: "Category 1", description: "Description for Category 1" },
+    { id: "2", name: "Category 2", description: "Description for Category 2" },
+    { id: "3", name: "Category 3", description: "Description for Category 3" },
   ]);
   const [products, setProducts] = useState(() =>
-    generateMockProducts(6, categories)
+    generateMockProducts(3, categories)
   );
+
+  // console.log(products, "products");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -272,6 +274,20 @@ const ProductManagement = () => {
     setProductDialogOpen(true);
   }, []);
 
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await apiInstance.get("/categories");
+        console.log(response, "response");
+        setCategories(response?.data?.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background p-4 lg:p-8">
       <div className="max-w-[1400px] mx-auto space-y-6">
@@ -328,11 +344,12 @@ const ProductManagement = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
+                  {categories.length > 0 &&
+                    categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
 
@@ -384,7 +401,7 @@ const ProductManagement = () => {
                     <ProductCard
                       key={product.id}
                       product={product}
-                      category={categories.find(
+                      category={categories?.find(
                         (c) => c.id === product.categoryId
                       )}
                       onEdit={openEditDialog}

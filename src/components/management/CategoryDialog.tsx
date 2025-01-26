@@ -10,6 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { z } from "zod";
+import { categorySchema } from "@/schemas/categorySchema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
 interface CategoryDialogProps {
   open: boolean;
@@ -36,9 +40,19 @@ export function CategoryDialog({
   const [formData, setFormData] = useState(defaultValues);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async () => {
+  type CategoryFormValues = z.infer<typeof categorySchema>;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CategoryFormValues>({
+    resolver: zodResolver(categorySchema),
+  });
+
+  const onSubmitData = async ({ name, description }: CategoryFormValues) => {
     setLoading(true);
-    await onSubmit(formData);
+    await onSubmit({ name, description });
     setLoading(false);
     onOpenChange(false);
   };
@@ -52,41 +66,42 @@ export function CategoryDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Category Name</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              placeholder="Enter category name"
-            />
+        <form onSubmit={handleSubmit(onSubmitData)}>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Category Name</Label>
+              <Input
+                id="name"
+                {...register("name")}
+                placeholder="Enter category name"
+              />
+              {errors.name && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                {...register("description")}
+                placeholder="Describe the category..."
+                className="min-h-[100px]"
+              />
+            </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              placeholder="Describe the category..."
-              className="min-h-[100px]"
-            />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {mode === "add" ? "Add Category" : "Save Changes"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              {mode === "add" ? "Add Category" : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
