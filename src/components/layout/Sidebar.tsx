@@ -44,12 +44,14 @@ const Sidebar = () => {
     return user && item.roles.includes(user.role);
   });
 
+  console.log(navigation, "access nav");
+
   return (
     <TooltipProvider>
       <div
         className={cn(
           "h-screen bg-card flex flex-col py-4 gap-2 border-r transition-all duration-300",
-          isExpanded ? "w-[200px]" : "w-[60px]",
+          isExpanded ? "w-[200px]" : "w-[60px]"
         )}
       >
         {/* Logo */}
@@ -79,7 +81,7 @@ const Sidebar = () => {
                       "hover:bg-accent transition-colors",
                       location.pathname === item.href
                         ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground",
+                        : "text-muted-foreground"
                     )}
                   >
                     <Icon className="w-5 h-5 min-w-[20px]" />
@@ -104,7 +106,7 @@ const Sidebar = () => {
                 <button
                   className={cn(
                     "flex items-center w-full h-10 rounded-md px-2",
-                    "hover:bg-accent text-muted-foreground transition-colors",
+                    "hover:bg-accent text-muted-foreground transition-colors"
                   )}
                 >
                   <Plus className="w-5 h-5 min-w-[20px]" />
@@ -122,13 +124,13 @@ const Sidebar = () => {
             onClick={() => setIsExpanded(!isExpanded)}
             className={cn(
               "flex items-center w-full h-10 rounded-md px-2",
-              "hover:bg-accent text-muted-foreground transition-colors",
+              "hover:bg-accent text-muted-foreground transition-colors"
             )}
           >
             <ChevronRight
               className={cn(
                 "w-5 h-5 min-w-[20px] transition-transform",
-                isExpanded && "rotate-180",
+                isExpanded && "rotate-180"
               )}
             />
             {isExpanded && (

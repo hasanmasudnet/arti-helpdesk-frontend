@@ -63,7 +63,7 @@ const TicketCard = ({ ticket, onClick }) => (
               ticket.priority === "high" && "border-red-500 text-red-500",
               ticket.priority === "medium" &&
                 "border-yellow-500 text-yellow-500",
-              ticket.priority === "low" && "border-green-500 text-green-500",
+              ticket.priority === "low" && "border-green-500 text-green-500"
             )}
           >
             {ticket.priority}
@@ -149,11 +149,11 @@ const TicketManagement = () => {
   const debouncedSearch = useCallback(
     debounce((term) => {
       const filtered = tickets.filter((ticket) =>
-        ticket.title.toLowerCase().includes(term.toLowerCase()),
+        ticket.title.toLowerCase().includes(term.toLowerCase())
       );
       setFilteredTickets(filtered);
     }, 300),
-    [tickets],
+    [tickets]
   );
 
   // Handle search
@@ -184,7 +184,7 @@ const TicketManagement = () => {
           loadMoreTickets();
         }
       },
-      { threshold: 0.5 },
+      { threshold: 0.5 }
     );
 
     if (loadMoreRef.current) {

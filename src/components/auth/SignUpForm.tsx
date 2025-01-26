@@ -6,23 +6,51 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
+import { signUpSchema } from "@/schemas/signUpSchema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useAuth } from "@/lib/auth";
 
 const SignUpForm = () => {
   const navigate = useNavigate();
+  const { signUp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  type SignUpFormValues = z.infer<typeof signUpSchema>;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignUpFormValues>({
+    resolver: zodResolver(signUpSchema),
+  });
+
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setLoading(true);
+  //   // Simulate API call
+  //   await new Promise((resolve) => setTimeout(resolve, 1500));
+  //   setLoading(false);
+  //   navigate("/verify");
+  // };
+
+  const onSubmit = async (data: SignUpFormValues) => {
+    console.log("signup data:", data);
     setLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      await signUp(data);
+    } catch (err) {
+      console.log(err);
+    }
     setLoading(false);
-    navigate("/verify");
+    // Perform login action (e.g., call API)
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid gap-2">
         <div className="grid gap-1">
           <Label htmlFor="name">Full Name</Label>
@@ -34,8 +62,11 @@ const SignUpForm = () => {
             autoComplete="name"
             autoCorrect="off"
             disabled={loading}
-            required
+            {...register("name")}
           />
+          {errors.name && (
+            <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+          )}
         </div>
 
         <div className="grid gap-1">
@@ -48,8 +79,11 @@ const SignUpForm = () => {
             autoComplete="email"
             autoCorrect="off"
             disabled={loading}
-            required
+            {...register("email")}
           />
+          {errors.email && (
+            <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+          )}
         </div>
 
         <div className="grid gap-1">
@@ -61,8 +95,8 @@ const SignUpForm = () => {
               placeholder="••••••••"
               autoComplete="new-password"
               disabled={loading}
-              required
               className="pr-10"
+              {...register("password")}
             />
             <Button
               type="button"
@@ -79,6 +113,11 @@ const SignUpForm = () => {
               )}
             </Button>
           </div>
+          {errors.password && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.password.message}
+            </p>
+          )}
         </div>
 
         <div className="grid gap-1">
@@ -89,12 +128,18 @@ const SignUpForm = () => {
             type="text"
             autoComplete="organization"
             disabled={loading}
+            {...register("company")}
           />
+          {errors.company && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.company.message}
+            </p>
+          )}
         </div>
       </div>
 
       <div className="flex items-center space-x-2">
-        <Checkbox id="terms" required />
+        <Checkbox id="terms" {...register("isaggree_terms_privacy")} />
         <Label htmlFor="terms" className="text-sm font-normal">
           I agree to the{" "}
           <Link
@@ -113,7 +158,7 @@ const SignUpForm = () => {
         </Label>
       </div>
 
-      <Button className="w-full" disabled={loading}>
+      <Button type="submit" className="w-full" disabled={loading}>
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Create Account
       </Button>
@@ -146,7 +191,7 @@ const SignUpForm = () => {
           to="/login"
           className={cn(
             "underline underline-offset-4 hover:text-primary",
-            loading && "pointer-events-none opacity-50",
+            loading && "pointer-events-none opacity-50"
           )}
         >
           Sign in

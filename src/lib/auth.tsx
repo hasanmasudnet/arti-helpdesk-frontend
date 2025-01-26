@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiInstance } from "./apiInstance";
 
 type UserRole = "admin" | "agent" | "customer";
 
@@ -14,6 +15,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<void>;
+  signUp: (data: any) => void;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -21,48 +23,69 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser]: any = useState(null);
   const navigate = useNavigate();
 
-  const login = async (username: string, password: string) => {
-    // Simulate different user roles based on credentials
-    let userData: User | null = null;
+  const signUp = async (data: any) => {
+    try {
+      const { name, email, password, company, isaggree_terms_privacy } = data;
+      const formData: any = new FormData();
+      formData.append("name", name);
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("password_confirmation", password);
+      formData.append("company", company);
 
-    if (username === "admin" && password === "admin") {
-      userData = {
-        id: "1",
-        name: "Admin User",
-        email: "admin@example.com",
-        role: "admin",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=admin",
-      };
-    } else if (username === "agent" && password === "agent") {
-      userData = {
-        id: "2",
-        name: "Agent User",
-        email: "agent@example.com",
-        role: "agent",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=agent",
-      };
-    } else if (username === "customer" && password === "customer") {
-      userData = {
-        id: "3",
-        name: "Customer User",
-        email: "customer@example.com",
-        role: "customer",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=customer",
-      };
-    } else {
-      throw new Error("Invalid credentials");
+      const response = await apiInstance.post("/auth/register", formData);
+
+      // localStorage.setItem("user", JSON.stringify(response?.data?.user));
+      // localStorage.setItem(
+      //   "access_token",
+      //   JSON.stringify(response?.data?.access_token)
+      // );
+
+      console.log(response, "res++");
+      navigate("/verify", { state: { email: formData.get("email") } });
+      // navigate("/dashboard");
+    } catch (error) {
+      console.log(error, "error");
     }
+  };
 
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
+  const login = async (email: string, password: string) => {
+    try {
+      const response: any = await apiInstance.post("/auth/login", {
+        email,
+        password,
+      });
+
+      if (response?.data?.user?.email_verified) {
+        localStorage.setItem("user", JSON.stringify(response?.data?.user));
+        localStorage.setItem(
+          "access_token",
+          JSON.stringify(response?.data?.access_token)
+        );
+
+        setUser(response?.data?.user);
+        navigate("/dashboard");
+      } else {
+        try {
+          const response = await apiInstance.post("/auth/resend-otp", {
+            email,
+          });
+          console.log("verify response");
+          navigate("/verify", { state: { email: email } });
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    } catch (error) {}
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("access_token");
     navigate("/login");
   };
 
@@ -78,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         login,
+        signUp,
         logout,
         isAuthenticated: !!user,
       }}
@@ -102,20 +126,22 @@ export function ProtectedRoute({
   children: React.ReactNode;
   allowedRoles?: UserRole[];
 }) {
-  const { user, isAuthenticated } = useAuth();
+  // const { user, isAuthenticated } = useAuth();
+  // const context = useContext(AuthContext);
+  const user = JSON.parse(localStorage?.getItem("user")) || "";
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!user) {
       navigate("/login");
     } else if (user && !allowedRoles.includes(user.role)) {
       navigate("/dashboard");
     }
-  }, [isAuthenticated, user, navigate, allowedRoles]);
+  }, [user]);
 
-  if (!isAuthenticated || (user && !allowedRoles.includes(user.role))) {
-    return null;
-  }
+  // if (!isAuthenticated || (user && !allowedRoles.includes(user.role))) {
+  //   return null;
+  // }
 
   return <>{children}</>;
 }

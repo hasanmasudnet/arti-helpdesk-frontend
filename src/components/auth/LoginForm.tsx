@@ -6,45 +6,39 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
+import { signInSchema } from "@/schemas/signInSchema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
 const LoginForm = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
+
+  type SignInFormValues = z.infer<typeof signInSchema>;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignInFormValues>({
+    resolver: zodResolver(signInSchema),
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async ({ email, password }: SignInFormValues) => {
     setLoading(true);
-    setError("");
-
     try {
-      await login(formData.username, formData.password);
-      navigate("/dashboard");
+      await login(email, password);
     } catch (err) {
-      setError("Invalid credentials");
+      console.log(err);
     }
     setLoading(false);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded">
-          {error}
-          <div className="mt-2 text-xs text-muted-foreground">
-            Try these credentials:
-            <br />- admin / admin (Full access)
-            <br />- agent / agent (Limited access)
-            <br />- customer / customer (Basic access)
-          </div>
-        </div>
-      )}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid gap-2">
         <div className="grid gap-1">
           <Label htmlFor="username">Username</Label>
@@ -55,12 +49,11 @@ const LoginForm = () => {
             autoCapitalize="none"
             autoCorrect="off"
             disabled={loading}
-            value={formData.username}
-            onChange={(e) =>
-              setFormData({ ...formData, username: e.target.value })
-            }
-            required
+            {...register("email")}
           />
+          {errors.email && (
+            <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+          )}
         </div>
 
         <div className="grid gap-1">
@@ -80,11 +73,7 @@ const LoginForm = () => {
               placeholder="••••••••"
               autoComplete="current-password"
               disabled={loading}
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              required
+              {...register("password")}
               className="pr-10"
             />
             <Button
@@ -102,6 +91,11 @@ const LoginForm = () => {
               )}
             </Button>
           </div>
+          {errors.password && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.password.message}
+            </p>
+          )}
         </div>
       </div>
 
@@ -116,7 +110,7 @@ const LoginForm = () => {
           to="/signup"
           className={cn(
             "underline underline-offset-4 hover:text-primary",
-            loading && "pointer-events-none opacity-50",
+            loading && "pointer-events-none opacity-50"
           )}
         >
           Sign up
