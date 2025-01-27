@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -31,28 +31,39 @@ export function CategoryDialog({
   open,
   onOpenChange,
   mode,
-  defaultValues = {
-    name: "",
-    description: "",
-  },
+  defaultValues,
   onSubmit,
 }: CategoryDialogProps) {
-  const [formData, setFormData] = useState(defaultValues);
   const [loading, setLoading] = useState(false);
 
   type CategoryFormValues = z.infer<typeof categorySchema>;
+  console.log(defaultValues, "defaultValues zzz");
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
+    defaultValues,
   });
+
+  useEffect(() => {
+    if (defaultValues) {
+      reset(defaultValues);
+    } else {
+      reset({ name: "", description: "" });
+    }
+  }, [defaultValues, reset]);
 
   const onSubmitData = async ({ name, description }: CategoryFormValues) => {
     setLoading(true);
-    await onSubmit({ name, description });
+    const data: any = { name, description };
+    if (defaultValues?.id) {
+      data.id = defaultValues.id;
+    }
+    await onSubmit(data);
     setLoading(false);
     onOpenChange(false);
   };

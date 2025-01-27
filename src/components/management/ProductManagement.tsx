@@ -28,32 +28,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import urls from "@/lib/urls";
 import { apiInstance } from "@/lib/apiInstance";
-
-const generateMockProducts = (count: number, categories: any[]) => {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `${i + 1}`,
-    name: `Product ${i + 1}`,
-    categoryId: categories[Math.floor(Math.random() * categories.length)].id,
-    description: `Description for Product ${i + 1}`,
-    url: `https://example.com/product-${i + 1}`,
-    image: `https://images.unsplash.com/photo-${
-      1460925895917 + i
-    }?q=80&w=2426&auto=format&fit=crop`,
-    aiInstructions: `AI instructions for handling Product ${
-      i + 1
-    } related queries.`,
-    activeTickets: Math.floor(Math.random() * 10),
-    price: Math.floor(Math.random() * 1000) + 99,
-    status: ["active", "draft", "archived"][Math.floor(Math.random() * 3)],
-  }));
-};
+import Alert from "../Alert";
 
 const ProductCard = ({ product, category, onEdit, onDelete }) => (
   <div className="group bg-card hover:bg-accent/5 p-6 rounded-xl space-y-4 transition-all border border-border hover:shadow-lg">
     <div className="aspect-[4/3] relative rounded-lg overflow-hidden bg-muted">
       <img
-        src={product.image}
+        src={`${urls.baseUrl}/${product.image}`}
         alt={product.name}
         className="w-full h-full object-cover transition-transform group-hover:scale-105"
       />
@@ -187,9 +170,7 @@ const ProductManagement = () => {
     { id: "2", name: "Category 2", description: "Description for Category 2" },
     { id: "3", name: "Category 3", description: "Description for Category 3" },
   ]);
-  const [products, setProducts] = useState(() =>
-    generateMockProducts(3, categories)
-  );
+  const [products, setProducts] = useState([]);
 
   // console.log(products, "products");
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -199,17 +180,23 @@ const ProductManagement = () => {
   const [sortBy, setSortBy] = useState("name");
   const [categorySearchTerm, setCategorySearchTerm] = useState("");
 
+  const fetchCategories = async () => {
+    try {
+      const response = await apiInstance.get("/categories");
+      console.log(response, "response");
+      setCategories(response?.data?.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const handleAddCategory = useCallback(
     async (data) => {
-      console.log(data, "categories");
-      // const newCategory = {
-      //   id: `${categories.length + 1}`,
-      //   ...data,
-      // };
-      // setCategories((prev) => [...prev, newCategory]);
+      const postData = { name: data?.name, description: data?.description };
       try {
-        const response = await apiInstance.post("/categories", data);
+        const response = await apiInstance.post("/categories", postData);
         console.log(response, "response");
+        fetchCategories();
       } catch (error) {
         console.log(error);
       }
@@ -217,25 +204,26 @@ const ProductManagement = () => {
     [categories]
   );
 
-  const handleEditCategory = useCallback((data) => {
-    setCategories((prev) =>
-      prev.map((category) =>
-        category.id === data.id ? { ...category, ...data } : category
-      )
-    );
+  const handleEditCategory = useCallback(async (data) => {
+    const postData = { name: data?.name, description: data?.description };
+    try {
+      const response = await apiInstance.put(
+        `/categories/${data?.id}`,
+        postData
+      );
+      fetchCategories();
+    } catch (error) {
+      console.log(error);
+    }
   }, []);
 
-  const handleDeleteCategory = useCallback((categoryId) => {
-    setCategories((prev) =>
-      prev.filter((category) => category.id !== categoryId)
-    );
-    setProducts((prev) =>
-      prev.map((product) =>
-        product.categoryId === categoryId
-          ? { ...product, categoryId: "" }
-          : product
-      )
-    );
+  const handleDeleteCategory = useCallback(async (categoryId) => {
+    try {
+      const response = await apiInstance.delete(`/categories/${categoryId}`);
+      fetchCategories();
+    } catch (error) {
+      console.log(error);
+    }
   }, []);
 
   const handleAddProduct = useCallback(
@@ -275,18 +263,24 @@ const ProductManagement = () => {
   }, []);
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
       try {
-        const response = await apiInstance.get("/categories");
+        const response = await apiInstance.get("/products");
         console.log(response, "response");
-        setCategories(response?.data?.data);
+        setProducts(response?.data?.data);
       } catch (error) {
         console.log(error);
       }
     };
 
-    fetchCategories();
+    fetchProducts();
   }, []);
+
+  console.log(products, "products");
 
   return (
     <div className="min-h-screen bg-background p-4 lg:p-8">
@@ -295,6 +289,7 @@ const ProductManagement = () => {
           <h1 className="text-2xl font-semibold text-foreground">
             Product Management
           </h1>
+          <Alert />
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -379,35 +374,15 @@ const ProductManagement = () => {
 
             <ScrollArea className="h-[calc(100vh-280px)]">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products
-                  .filter(
-                    (product) =>
-                      product.name
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase()) &&
-                      (categoryFilter === "all" ||
-                        product.categoryId === categoryFilter) &&
-                      (statusFilter === "all" ||
-                        product.status === statusFilter)
-                  )
-                  .sort((a, b) => {
-                    if (sortBy === "name") return a.name.localeCompare(b.name);
-                    if (sortBy === "price") return a.price - b.price;
-                    if (sortBy === "tickets")
-                      return b.activeTickets - a.activeTickets;
-                    return 0;
-                  })
-                  .map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      category={categories?.find(
-                        (c) => c.id === product.categoryId
-                      )}
-                      onEdit={openEditDialog}
-                      onDelete={handleDeleteProduct}
-                    />
-                  ))}
+                {products.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    category={product?.category}
+                    onEdit={openEditDialog}
+                    onDelete={handleDeleteProduct}
+                  />
+                ))}
               </div>
             </ScrollArea>
           </TabsContent>
