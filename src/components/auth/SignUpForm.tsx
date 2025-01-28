@@ -120,7 +120,7 @@ const SignUpForm = () => {
           )}
         </div>
 
-        <div className="grid gap-1">
+        <div className="grid gap-1 mb-2">
           <Label htmlFor="company">Company Name (Optional)</Label>
           <Input
             id="company"
@@ -138,52 +138,10 @@ const SignUpForm = () => {
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox id="terms" {...register("isaggree_terms_privacy")} />
-        <Label htmlFor="terms" className="text-sm font-normal">
-          I agree to the{" "}
-          <Link
-            to="/terms"
-            className="underline underline-offset-4 hover:text-primary"
-          >
-            Terms of Service
-          </Link>{" "}
-          and{" "}
-          <Link
-            to="/privacy"
-            className="underline underline-offset-4 hover:text-primary"
-          >
-            Privacy Policy
-          </Link>
-        </Label>
-      </div>
-
       <Button type="submit" className="w-full" disabled={loading}>
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Create Account
       </Button>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Or continue with
-          </span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <Button variant="outline" type="button" disabled={loading}>
-          <img src="/google.svg" alt="Google" className="mr-2 h-4 w-4" />
-          Google
-        </Button>
-        <Button variant="outline" type="button" disabled={loading}>
-          <img src="/github.svg" alt="GitHub" className="mr-2 h-4 w-4" />
-          GitHub
-        </Button>
-      </div>
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
