@@ -73,10 +73,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const response = await apiInstance.post("/auth/resend-otp", {
             email,
           });
-          console.log("verify response");
           navigate("/verify", { state: { email: email } });
         } catch (error) {
-          console.log(error);
+          console.log(error, "error");
+          return error;
         }
       }
     } catch (error) {}

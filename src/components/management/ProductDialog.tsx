@@ -24,6 +24,7 @@ import { z } from "zod";
 import { productSchema } from "@/schemas/productSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import urls from "@/lib/urls";
 
 interface ProductDialogProps {
   open: boolean;
@@ -49,24 +50,15 @@ export function ProductDialog({
   onOpenChange,
   mode,
   categories = [],
-  defaultValues = {
-    name: "",
-    category_id: "",
-    price: "0",
-    url: "",
-    image: "",
-    description: "",
-    ai_instructions: "",
-    status: "",
-  },
+  defaultValues,
   onSubmit,
 }: ProductDialogProps) {
-  const [formData, setFormData] = useState(defaultValues);
+  const [formData, setFormData] = useState(defaultValues ? defaultValues : {});
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
   type ProductFormValues = z.infer<typeof productSchema>;
-  // console.log(defaultValues, "product default values");
+  console.log(defaultValues, "product default values");
 
   const {
     register,
@@ -93,15 +85,20 @@ export function ProductDialog({
         status: "",
       });
     }
-  }, []);
+  }, [defaultValues, reset]);
 
   const onSubmitData = async (data: any) => {
     console.log(data, "product adding data");
     setLoading(true);
-    const postData = {
+    const postData: any = {
       data,
-      photo: selectedFile,
     };
+    if (defaultValues?.id) {
+      postData.id = defaultValues.id;
+    }
+    if (selectedFile) {
+      postData.photo = selectedFile;
+    }
     await onSubmit(postData);
     setLoading(false);
     onOpenChange(false);
@@ -111,7 +108,7 @@ export function ProductDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto custom-scrollbar">
         <DialogHeader>
           <DialogTitle>
             {mode === "add" ? "Add New Product" : "Edit Product"}
@@ -127,11 +124,11 @@ export function ProductDialog({
                     `${
                       selectedFile
                         ? URL.createObjectURL(selectedFile)
-                        : formData.image
+                        : `${urls.baseUrl}/${defaultValues?.image}`
                     }` || "/placeholder.jpg"
                   }
-                  alt={`${selectedFile ? selectedFile.name : formData.name}`}
-                  className="object-cover rounded-lg border w-full h-[200px]"
+                  alt={`${selectedFile ? selectedFile.name : "Product Image"}`}
+                  className="object-cover rounded-lg border min-w-[260px] w-full h-[200px]"
                 />
                 <Dialog>
                   <DialogTrigger asChild>

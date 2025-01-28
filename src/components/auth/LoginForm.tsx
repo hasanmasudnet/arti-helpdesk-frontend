@@ -30,7 +30,7 @@ const LoginForm = () => {
   const onSubmit = async ({ email, password }: SignInFormValues) => {
     setLoading(true);
     try {
-      await login(email, password);
+      const response = await login(email, password);
     } catch (err) {
       console.log(err);
     }
@@ -41,7 +41,7 @@ const LoginForm = () => {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid gap-2">
         <div className="grid gap-1">
-          <Label htmlFor="username">Username</Label>
+          <Label htmlFor="username">Email</Label>
           <Input
             id="username"
             placeholder="admin"
