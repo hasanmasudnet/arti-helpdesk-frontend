@@ -239,10 +239,10 @@ export function FilterDialog({
             {/* Date Range Filter */}
             <div className="space-y-4">
               <Label>Date Range</Label>
-              <DatePickerWithRange
+              {/* <DatePickerWithRange
                 date={selectedFilters.dateRange}
                 onUpdate={handleDateRangeChange}
-              />
+              /> */}
             </div>
           </div>
         </ScrollArea>

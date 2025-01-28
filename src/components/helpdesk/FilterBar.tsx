@@ -25,10 +25,10 @@ const FilterBar = ({
   onPriorityFilter = () => {},
   onDateRangeFilter = () => {},
 }: FilterBarProps) => {
-  const [date, setDate] = React.useState<{
-    from: Date;
-    to: Date;
-  }>({ from: new Date(), to: addDays(new Date(), 7) });
+  const [date, setDate] = React.useState<any>({
+    from: new Date(),
+    to: addDays(new Date(), 7),
+  });
 
   return (
     <div className="w-full bg-background p-4 border-b">
@@ -68,7 +68,7 @@ const FilterBar = ({
             </SelectContent>
           </Select>
 
-          <DatePickerWithRange
+          {/* <DatePickerWithRange
             date={date}
             onUpdate={(newDate) => {
               if (newDate?.from && newDate?.to) {
@@ -76,7 +76,7 @@ const FilterBar = ({
                 onDateRangeFilter(newDate);
               }
             }}
-          />
+          /> */}
         </div>
       </div>
     </div>

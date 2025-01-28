@@ -31,6 +31,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import urls from "@/lib/urls";
 import { apiInstance } from "@/lib/apiInstance";
 import Alert from "../Alert";
+import { set } from "date-fns";
+import { on } from "events";
 
 const ProductCard = ({ product, category, onEdit, onDelete }) => (
   <div className="group bg-card hover:bg-accent/5 p-6 rounded-xl space-y-4 transition-all border border-border hover:shadow-lg">
@@ -116,44 +118,57 @@ const ProductCard = ({ product, category, onEdit, onDelete }) => (
 );
 
 const CategoryList = ({ categories, onEdit, onDelete, searchTerm = "" }) => {
+  // const [isDialogOpen, setIsDialogOpen] = useState(false);
   const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleDelete = async (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this item?"
+    );
+    if (confirmed) {
+      // Call the delete API
+      onDelete(id);
+    }
+  };
 
   return (
     <ScrollArea className="h-[calc(100vh-220px)]">
       <div className="space-y-2 p-2">
         {filteredCategories.map((category) => (
-          <div
-            key={category.id}
-            className="flex items-center justify-between p-2 bg-card rounded-lg border border-border hover:shadow-sm transition-all"
-          >
-            <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-foreground truncate">
-                {category.name}
-              </h3>
-              <p className="text-sm text-muted-foreground truncate">
-                {category.description}
-              </p>
+          <>
+            <div
+              key={category.id}
+              className="flex items-center justify-between p-2 bg-card rounded-lg border border-border hover:shadow-sm transition-all"
+            >
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-foreground truncate">
+                  {category.name}
+                </h3>
+                <p className="text-sm text-muted-foreground truncate">
+                  {category.description}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 ml-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEdit(category)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => handleDelete(category.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2 ml-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onEdit(category)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-destructive hover:text-destructive"
-                onClick={() => onDelete(category.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          </>
         ))}
       </div>
     </ScrollArea>
@@ -171,7 +186,7 @@ const ProductManagement = () => {
     { id: "3", name: "Category 3", description: "Description for Category 3" },
   ]);
   const [products, setProducts] = useState([]);
-
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   // console.log(products, "products");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -228,14 +243,31 @@ const ProductManagement = () => {
 
   const handleAddProduct = useCallback(
     (data) => {
-      const newProduct = {
-        id: `${products.length + 1}`,
-        ...data,
-        activeTickets: 0,
-        price: 99,
-        status: "draft",
-      };
-      setProducts((prev) => [...prev, newProduct]);
+      console.log(data, "add product data");
+      // const signUp = async (data: any) => {
+      //   try {
+      //     const { name, email, password, company, isaggree_terms_privacy } = data;
+      //     const formData: any = new FormData();
+      //     formData.append("name", name);
+      //     formData.append("email", email);
+      //     formData.append("password", password);
+      //     formData.append("password_confirmation", password);
+      //     formData.append("company", company);
+
+      //     const response = await apiInstance.post("/auth/register", formData);
+
+      //     // localStorage.setItem("user", JSON.stringify(response?.data?.user));
+      //     // localStorage.setItem(
+      //     //   "access_token",
+      //     //   JSON.stringify(response?.data?.access_token)
+      //     // );
+
+      //     console.log(response, "res++");
+      //     navigate("/verify", { state: { email: formData.get("email") } });
+      //   } catch (error) {
+      //     console.log(error, "error");
+      //   }
+      // };
     },
     [products]
   );
@@ -289,7 +321,6 @@ const ProductManagement = () => {
           <h1 className="text-2xl font-semibold text-foreground">
             Product Management
           </h1>
-          <Alert />
           <div className="flex gap-2">
             <Button
               variant="outline"

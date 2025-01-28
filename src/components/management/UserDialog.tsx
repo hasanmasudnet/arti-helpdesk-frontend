@@ -160,9 +160,9 @@ export function UserDialog({
                 id="password"
                 type="password"
                 placeholder="Leave blank to keep current"
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
+                // onChange={(e) =>
+                //   setFormData({ ...formData, password: e.target.value })
+                // }
               />
             </div>
           )}

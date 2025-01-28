@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { z } from "zod";
+import { productSchema } from "@/schemas/productSchema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
 interface ProductDialogProps {
   open: boolean;
@@ -27,11 +33,13 @@ interface ProductDialogProps {
   defaultValues?: {
     id?: string;
     name: string;
-    categoryId: string;
-    description: string;
+    category_id: string;
+    price: string;
     url: string;
     image: string;
-    aiInstructions: string;
+    description: string;
+    ai_instructions: string;
+    status: string;
   };
   onSubmit: (data: any) => void;
 }
@@ -43,24 +51,59 @@ export function ProductDialog({
   categories = [],
   defaultValues = {
     name: "",
-    categoryId: "",
-    description: "",
+    category_id: "",
+    price: "0",
     url: "",
-    image:
-      "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426&auto=format&fit=crop",
-    aiInstructions: "",
+    image: "",
+    description: "",
+    ai_instructions: "",
+    status: "",
   },
   onSubmit,
 }: ProductDialogProps) {
   const [formData, setFormData] = useState(defaultValues);
   const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    await onSubmit(formData);
-    setLoading(false);
-    onOpenChange(false);
+  type ProductFormValues = z.infer<typeof productSchema>;
+  // console.log(defaultValues, "product default values");
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema),
+    defaultValues,
+  });
+
+  useEffect(() => {
+    if (defaultValues) {
+      reset(defaultValues);
+    } else {
+      reset({
+        name: "",
+        category_id: "",
+        price: "0",
+        url: "",
+        // image: "",
+        description: "",
+        ai_instructions: "",
+        status: "",
+      });
+    }
+  }, []);
+
+  const onSubmitData = async (data: any) => {
+    console.log(data, "product adding data");
+    // setLoading(true);
+    // await onSubmit(formData);
+    // setLoading(false);
+    // onOpenChange(false);
   };
+
+  console.log(errors, "errrr");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -71,124 +114,177 @@ export function ProductDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4">
-          <div className="flex justify-center">
-            <div className="relative">
-              <img
-                src={formData.image}
-                alt={formData.name}
-                className="w-full h-48 object-cover rounded-lg"
+        <form onSubmit={handleSubmit(onSubmitData)}>
+          <div className="grid gap-6 py-4">
+            <div className="flex justify-center">
+              <div className="relative">
+                <img
+                  src={formData.image}
+                  alt={formData.name}
+                  className="object-cover rounded-lg border w-[260px] h-[200px]"
+                />
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="absolute bottom-2 right-2 h-8 w-8 rounded-full bg-background"
+                    >
+                      <Camera className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="p-4 rounded-lg bg-white shadow-lg">
+                    <DialogTitle className="text-lg font-bold">
+                      Upload Image
+                    </DialogTitle>
+                    <DialogDescription className="text-lg text-gray-600 mb-4">
+                      Choose an image to upload and display.
+                    </DialogDescription>
+                    <Input type="file" accept="image/*" />
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        onClick={() => setSelectedFile(null)}
+                        variant="ghost"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="name">Product Name</Label>
+              <Input
+                id="name"
+                {...register("name")}
+                placeholder="Enter product name"
               />
-              <Button
-                size="icon"
-                variant="outline"
-                className="absolute bottom-2 right-2 h-8 w-8 rounded-full bg-background"
-                onClick={() => {
-                  const images = [
-                    "photo-1460925895917-afdab827c52f",
-                    "photo-1486312338219-ce68d2c6f44d",
-                    "photo-1519389950473-47ba0277781c",
-                    "photo-1531297484001-80022131f5a1",
-                  ];
-                  const randomImage =
-                    images[Math.floor(Math.random() * images.length)];
-                  setFormData({
-                    ...formData,
-                    image: `https://images.unsplash.com/${randomImage}?q=80&w=2426&auto=format&fit=crop`,
-                  });
-                }}
+              {errors.name && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="category">Category</Label>
+              <select
+                {...register("category_id")}
+                className="bg-transparent border border-border rounded-lg p-2 w-full text-white"
               >
-                <Camera className="h-4 w-4" />
-              </Button>
+                <option value="" className="text-black">
+                  -- Select --
+                </option>
+                {categories.map((category) => (
+                  <option
+                    key={category.id}
+                    value={category.id}
+                    className="text-black"
+                  >
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+              {errors.category_id && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.category_id.message}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="price">Price</Label>
+              <Input id="price" {...register("price")} placeholder="0.00" />
+              {errors.price && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.price.message}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="url">Product/Service URL</Label>
+              <Input
+                id="url"
+                {...register("url")}
+                placeholder="https://example.com/product"
+              />
+              {errors.url && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.url.message}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                {...register("description")}
+                placeholder="Describe the product..."
+                className="min-h-[100px]"
+              />
+              {errors.description && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.description.message}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="aiInstructions">
+                AI Instructions
+                <span className="text-xs text-muted-foreground ml-2">
+                  (Used for automated responses)
+                </span>
+              </Label>
+              <Textarea
+                id="aiInstructions"
+                {...register("ai_instructions")}
+                placeholder="Enter instructions for AI to handle product-related queries..."
+                className="min-h-[100px]"
+              />
+              {errors.ai_instructions && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.ai_instructions.message}
+                </p>
+              )}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="category">Status</Label>
+              <select
+                {...register("status")}
+                className="bg-transparent border border-border rounded-lg p-2 w-full text-white"
+              >
+                <option value="" className="text-black">
+                  -- Select --
+                </option>
+                <option value="1" className="text-black">
+                  Active
+                </option>
+                <option value="2" className="text-black">
+                  Inactive
+                </option>
+              </select>
+              {errors.status && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.status.message}
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="category">Category</Label>
-            <Select
-              value={formData.categoryId}
-              onValueChange={(value) =>
-                setFormData({ ...formData, categoryId: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="name">Product Name</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              placeholder="Enter product name"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="url">Product/Service URL</Label>
-            <Input
-              id="url"
-              value={formData.url}
-              onChange={(e) =>
-                setFormData({ ...formData, url: e.target.value })
-              }
-              placeholder="https://example.com/product"
-              type="url"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              placeholder="Describe the product..."
-              className="min-h-[100px]"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="aiInstructions">
-              AI Instructions
-              <span className="text-xs text-muted-foreground ml-2">
-                (Used for automated responses)
-              </span>
-            </Label>
-            <Textarea
-              id="aiInstructions"
-              value={formData.aiInstructions}
-              onChange={(e) =>
-                setFormData({ ...formData, aiInstructions: e.target.value })
-              }
-              placeholder="Enter instructions for AI to handle product-related queries..."
-              className="min-h-[100px]"
-            />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {mode === "add" ? "Add Product" : "Save Changes"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {mode === "add" ? "Add Product" : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

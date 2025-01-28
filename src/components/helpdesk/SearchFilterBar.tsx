@@ -17,12 +17,12 @@ interface SearchFilterBarProps {
   onFilterChange?: (filters: {
     status?: string;
     priority?: string;
-    dateRange?: { from: Date; to: Date };
+    dateRange?: any;
   }) => void;
   activeFilters?: {
     status?: string;
     priority?: string;
-    dateRange?: { from: Date; to: Date };
+    dateRange?: any;
   };
 }
 
@@ -78,12 +78,12 @@ const SearchFilterBar = ({
             </SelectContent>
           </Select>
 
-          <DatePickerWithRange
+          {/* <DatePickerWithRange
             className="w-[300px]"
             onChange={(dateRange) =>
               onFilterChange({ ...activeFilters, dateRange })
             }
-          />
+          /> */}
         </div>
       </div>
 

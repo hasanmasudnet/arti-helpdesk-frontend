@@ -9,26 +9,9 @@ interface DashboardLayoutProps {
   onStatusChange?: (ticketId: string, status: string) => void;
   onAssignAgent?: (ticketId: string) => void;
   onViewDetails?: (ticketId: string) => void;
-  activeFilters?: {
-    status?: string;
-    priority?: string;
-    dateRange?: { from: Date; to: Date };
-  };
-  tickets?: Array<{
-    id: string;
-    status: "open" | "pending" | "resolved";
-    priority: "high" | "medium" | "low";
-    subject: string;
-    requester: string;
-    assignedAgent: string;
-    createdAt: string;
-  }>;
-  stats?: Array<{
-    title: string;
-    count: number;
-    trend: number;
-    color: string;
-  }>;
+  activeFilters?: any;
+  tickets?: any;
+  stats?: any;
 }
 
 const defaultStats = [
