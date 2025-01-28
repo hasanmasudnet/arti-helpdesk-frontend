@@ -97,10 +97,14 @@ export function ProductDialog({
 
   const onSubmitData = async (data: any) => {
     console.log(data, "product adding data");
-    // setLoading(true);
-    // await onSubmit(formData);
-    // setLoading(false);
-    // onOpenChange(false);
+    setLoading(true);
+    const postData = {
+      data,
+      photo: selectedFile,
+    };
+    await onSubmit(postData);
+    setLoading(false);
+    onOpenChange(false);
   };
 
   console.log(errors, "errrr");
@@ -119,9 +123,15 @@ export function ProductDialog({
             <div className="flex justify-center">
               <div className="relative">
                 <img
-                  src={formData.image}
-                  alt={formData.name}
-                  className="object-cover rounded-lg border w-[260px] h-[200px]"
+                  src={
+                    `${
+                      selectedFile
+                        ? URL.createObjectURL(selectedFile)
+                        : formData.image
+                    }` || "/placeholder.jpg"
+                  }
+                  alt={`${selectedFile ? selectedFile.name : formData.name}`}
+                  className="object-cover rounded-lg border w-full h-[200px]"
                 />
                 <Dialog>
                   <DialogTrigger asChild>
@@ -140,15 +150,20 @@ export function ProductDialog({
                     <DialogDescription className="text-lg text-gray-600 mb-4">
                       Choose an image to upload and display.
                     </DialogDescription>
-                    <Input type="file" accept="image/*" />
-                    <div className="mt-4 flex justify-end">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setSelectedFile(e.target?.files[0])}
+                    />
+                    {/* <div className="mt-4 flex justify-end">
                       <Button
                         onClick={() => setSelectedFile(null)}
                         variant="ghost"
+                        className="bg-black text-white"
                       >
                         Cancel
                       </Button>
-                    </div>
+                    </div> */}
                   </DialogContent>
                 </Dialog>
               </div>

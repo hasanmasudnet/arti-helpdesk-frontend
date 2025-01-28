@@ -242,32 +242,33 @@ const ProductManagement = () => {
   }, []);
 
   const handleAddProduct = useCallback(
-    (data) => {
+    async (data) => {
       console.log(data, "add product data");
-      // const signUp = async (data: any) => {
-      //   try {
-      //     const { name, email, password, company, isaggree_terms_privacy } = data;
-      //     const formData: any = new FormData();
-      //     formData.append("name", name);
-      //     formData.append("email", email);
-      //     formData.append("password", password);
-      //     formData.append("password_confirmation", password);
-      //     formData.append("company", company);
+      try {
+        const {
+          name,
+          price,
+          status,
+          url,
+          ai_instructions,
+          category_id,
+          description,
+        } = data?.data;
+        const photo = data?.photo;
+        const formData: any = new FormData();
 
-      //     const response = await apiInstance.post("/auth/register", formData);
+        formData.append("name", name);
+        formData.append("price", price);
+        formData.append("status", status);
+        formData.append("url", url);
+        formData.append("ai_instructions", ai_instructions);
+        formData.append("category_id", category_id);
+        formData.append("image", photo);
 
-      //     // localStorage.setItem("user", JSON.stringify(response?.data?.user));
-      //     // localStorage.setItem(
-      //     //   "access_token",
-      //     //   JSON.stringify(response?.data?.access_token)
-      //     // );
-
-      //     console.log(response, "res++");
-      //     navigate("/verify", { state: { email: formData.get("email") } });
-      //   } catch (error) {
-      //     console.log(error, "error");
-      //   }
-      // };
+        const response = await apiInstance.post("/products", formData);
+      } catch (error) {
+        console.log(error, "error");
+      }
     },
     [products]
   );
