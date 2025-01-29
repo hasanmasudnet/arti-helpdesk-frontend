@@ -295,35 +295,40 @@ const ProductManagement = () => {
 
   const handleEditProduct = useCallback(async (data) => {
     console.log(data, "Update product data");
-    // try {
-    //   const {
-    //     id,
-    //     name,
-    //     price,
-    //     status,
-    //     url,
-    //     ai_instructions,
-    //     category_id,
-    //     description,
-    //   } = data?.data;
-    //   const photo = data?.photo;
-    //   const formData: any = new FormData();
+    try {
+      const {
+        name,
+        price,
+        status,
+        url,
+        ai_instructions,
+        category_id,
+        description,
+      } = data?.data;
+      const photo = data?.photo;
+      const formData: any = new FormData();
 
-    //   formData.append("name", name);
-    //   formData.append("price", price);
-    //   formData.append("status", status);
-    //   formData.append("url", url);
-    //   formData.append("price", price);
-    //   formData.append("ai_instructions", ai_instructions);
-    //   formData.append("category_id", category_id);
-    //   if (photo) {
-    //     formData.append("image", photo);
-    //   }
+      formData.append("name", name);
+      formData.append("price", price);
+      formData.append("status", status);
+      formData.append("url", url);
+      formData.append("price", price);
+      formData.append("description", description);
+      formData.append("ai_instructions", ai_instructions);
+      formData.append("category_id", category_id);
+      if (photo) {
+        formData.append("image", photo);
+      }
 
-    //   const response = await apiInstance.post("/products", formData);
-    // } catch (error) {
-    //   console.log(error, "error");
-    // }
+      const response = await apiInstance.patch(
+        `/products/${data?.id}`,
+        formData
+      );
+      toast.success("product updated successfully");
+      fetchProducts();
+    } catch (error) {
+      console.log(error, "error");
+    }
   }, []);
 
   const handleDeleteProduct = useCallback((productId) => {

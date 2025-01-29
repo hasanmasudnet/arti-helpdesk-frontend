@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,24 +20,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Plus, MoreHorizontal } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserDialog } from "./UserDialog";
-
-const generateMockUsers = (count: number) => {
-  const roles = ["admin", "agent", "customer"];
-  const statuses = ["active", "inactive", "pending"];
-
-  return Array.from({ length: count }, (_, i) => ({
-    id: `${i + 1}`,
-    name: `User ${i + 1}`,
-    email: `user${i + 1}@example.com`,
-    role: roles[Math.floor(Math.random() * roles.length)],
-    status: statuses[Math.floor(Math.random() * statuses.length)],
-    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.random()}`,
-    lastActive: `${Math.floor(Math.random() * 24)}h ago`,
-  }));
-};
+import { apiInstance } from "@/lib/apiInstance";
+import { toast, ToastContainer } from "react-toastify";
 
 const UserManagement = () => {
-  const [users, setUsers] = useState(generateMockUsers(50));
+  const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -45,27 +32,82 @@ const UserManagement = () => {
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddUser = (data: any) => {
-    const newUser = {
-      id: `${users.length + 1}`,
-      ...data,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.random()}`,
-      lastActive: "Just now",
-    };
-    setUsers((prev) => [...prev, newUser]);
+  const fetchUsers = async () => {
+    try {
+      const response = await apiInstance.get("/users");
+      setUsers(response?.data?.data);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const handleEditUser = (data: any) => {
-    setUsers((prev) =>
-      prev.map((user) => (user.id === data.id ? { ...user, ...data } : user)),
-    );
+  const handleAddUser = async (data: any) => {
+    console.log(data, "add user data");
+    try {
+      const dataFileds = data?.formData;
+      const formData = new FormData();
+
+      formData.append("name", dataFileds.name);
+      formData.append("email", dataFileds.email);
+      formData.append("phone_number", dataFileds.phone_number);
+      formData.append("role", dataFileds.role);
+      formData.append("department", dataFileds.department);
+      formData.append("active_status", dataFileds.status);
+      formData.append("password", dataFileds.password);
+      formData.append("password_confirmation", dataFileds.password);
+      if (data?.photo) {
+        formData.append("image", data.photo);
+      }
+
+      await apiInstance.post("/users", formData);
+      toast.success("User added successfully");
+      fetchUsers();
+      setDialogOpen(false);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const handleDeleteUser = (userId: string) => {
-    setUsers((prev) => prev.filter((user) => user.id !== userId));
+  const handleEditUser = async (data: any) => {
+    console.log(data, "edit user----");
+    try {
+      const dataFileds = data?.formData;
+      const formData = new FormData();
+
+      formData.append("_method", "put");
+      formData.append("name", dataFileds.name);
+      formData.append("email", dataFileds.email);
+      formData.append("phone_number", dataFileds.phone_number);
+      formData.append("role", dataFileds.role);
+      formData.append("department", dataFileds.department);
+      formData.append("active_status", dataFileds.status);
+      formData.append("password", dataFileds.password);
+      formData.append("password_confirmation", dataFileds.password);
+      if (data?.photo) {
+        formData.append("image", data.photo);
+      }
+
+      await apiInstance.post(`/users/${data?.id}`, formData);
+      toast.success("User updated successfully");
+      fetchUsers();
+      setDialogOpen(false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await apiInstance.delete(`/users/${userId}`);
+      toast.success("User delete successfully");
+      fetchUsers();
+      setDialogOpen(false);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const getRoleBadgeColor = (role: string) => {
@@ -81,17 +123,34 @@ const UserManagement = () => {
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case "active":
+      case "1":
         return "bg-green-100 text-green-800 border-green-200";
-      case "inactive":
+      case "2":
         return "bg-red-100 text-red-800 border-red-200";
       default:
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
     }
   };
 
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleDelete = async (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this item?"
+    );
+    if (confirmed) {
+      // Call the delete API
+      handleDeleteUser(id);
+    }
+  };
+
+  console.log(users, "users");
+
   return (
     <div className="min-h-screen bg-background p-4 lg:p-8">
+      <ToastContainer autoClose={1600} />
       <div className="max-w-[1400px] mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold text-foreground">Users</h1>
@@ -126,7 +185,7 @@ const UserManagement = () => {
                   <TableHead>User</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Last Active</TableHead>
+                  <TableHead>Last Login</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -158,12 +217,14 @@ const UserManagement = () => {
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={getStatusBadgeColor(user.status)}
+                        className={getStatusBadgeColor(
+                          user?.active_status.toString()
+                        )}
                       >
-                        {user.status}
+                        {user.active_status === 1 ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{user.lastActive}</TableCell>
+                    <TableCell>{user.last_login}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -182,7 +243,7 @@ const UserManagement = () => {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => handleDelete(user.id)}
                           >
                             Delete User
                           </DropdownMenuItem>

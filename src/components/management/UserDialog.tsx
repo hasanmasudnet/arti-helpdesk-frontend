@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,8 +28,11 @@ interface UserDialogProps {
     name: string;
     email: string;
     role: string;
-    status: string;
-    avatar: string;
+    status: number;
+    image: string;
+    department: string;
+    phone_number?: string;
+    password?: string;
   };
   onSubmit: (data: any) => void;
 }
@@ -42,20 +45,52 @@ export function UserDialog({
     name: "",
     email: "",
     role: "customer",
-    status: "active",
-    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.random()}`,
+    status: 1,
+    image: "",
+    department: "1",
+    phone_number: "",
+    password: "",
   },
   onSubmit,
 }: UserDialogProps) {
   const [formData, setFormData] = useState(defaultValues);
   const [loading, setLoading] = useState(false);
+  const [image, setImage]: any = useState(null);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      setImage(file);
+    }
+  };
 
   const handleSubmit = async () => {
     setLoading(true);
-    await onSubmit(formData);
+    const data: any = {
+      formData,
+    };
+
+    if (image) {
+      data.photo = image;
+    }
+
+    if (defaultValues?.id) {
+      data.id = defaultValues?.id;
+    }
+
+    await onSubmit(data);
     setLoading(false);
-    onOpenChange(false);
+    setFormData(defaultValues);
+    // onOpenChange(false);
   };
+
+  useEffect(() => {
+    if (defaultValues.email) {
+      setFormData(defaultValues);
+    }
+  }, [defaultValues]);
+
+  console.log(defaultValues, "default values edit user");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -67,7 +102,7 @@ export function UserDialog({
         </DialogHeader>
 
         <div className="grid gap-6 py-4">
-          <div className="flex justify-center">
+          {/* <div className="flex justify-center">
             <div className="relative">
               <Avatar className="h-24 w-24">
                 <AvatarImage src={formData.avatar} alt={formData.name} />
@@ -88,6 +123,32 @@ export function UserDialog({
                 <Camera className="h-4 w-4" />
               </Button>
             </div>
+          </div> */}
+
+          <div className="relative w-24 h-24 justify-self-center">
+            {/* Avatar */}
+            <img
+              src={image ? URL.createObjectURL(image) : "/default-avatar.png"}
+              alt="Profile"
+              className="w-full h-full rounded-full border-2 border-gray-500 object-cover"
+            />
+
+            {/* Hidden File Input */}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+              id="fileInput"
+            />
+
+            {/* Camera Icon */}
+            <label
+              htmlFor="fileInput"
+              className="absolute bottom-1 right-1 bg-black p-2 rounded-full cursor-pointer hover:opacity-80"
+            >
+              <Camera size={18} className="text-white" />
+            </label>
           </div>
 
           <div className="grid gap-2">
@@ -116,6 +177,18 @@ export function UserDialog({
           </div>
 
           <div className="grid gap-2">
+            <Label htmlFor="phone">Phone</Label>
+            <Input
+              id="phone"
+              value={formData.phone_number}
+              onChange={(e) =>
+                setFormData({ ...formData, phone_number: e.target.value })
+              }
+              placeholder="+880-XXXXXXXX"
+            />
+          </div>
+
+          <div className="grid gap-2">
             <Label>Role</Label>
             <Select
               value={formData.role}
@@ -135,37 +208,61 @@ export function UserDialog({
           </div>
 
           <div className="grid gap-2">
+            <Label>Department</Label>
+            <Select
+              value={formData.department.toString()}
+              onValueChange={(value) =>
+                setFormData({ ...formData, department: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder="Select department"
+                  className="text-white"
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Support</SelectItem>
+                <SelectItem value="2">Technical</SelectItem>
+                <SelectItem value="3">Billing</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
             <Label>Status</Label>
             <Select
-              value={formData.status}
+              value={formData.status.toString()}
               onValueChange={(value) =>
-                setFormData({ ...formData, status: value })
+                setFormData({ ...formData, status: +value })
               }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="1">Active</SelectItem>
+                <SelectItem value="2">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {mode === "edit" && (
-            <div className="grid gap-2">
-              <Label htmlFor="password">New Password (Optional)</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Leave blank to keep current"
-                // onChange={(e) =>
-                //   setFormData({ ...formData, password: e.target.value })
-                // }
-              />
-            </div>
-          )}
+          <div className="grid gap-2">
+            <Label htmlFor="pass">
+              {mode == "add" ? "Password" : "New Password (Optional)"}
+            </Label>
+            <Input
+              id="pass"
+              type="password"
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+              placeholder={
+                mode == "add" ? "type password" : "Leave blank to keep current"
+              }
+            />
+          </div>
         </div>
 
         <DialogFooter>

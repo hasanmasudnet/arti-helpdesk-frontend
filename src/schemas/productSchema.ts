@@ -8,7 +8,7 @@ export const productSchema = z.object({
   price: z
     .string()
     .min(1, { message: "price required" })
-    .regex(/^\d+$/, { message: "price must be a number" }),
+    .regex(/^\d+(\.\d+)?$/, { message: "price must be a number" }),
   url: z
     .string({ message: "Product url must be a string" })
     .url({ message: "url must be valid" }),

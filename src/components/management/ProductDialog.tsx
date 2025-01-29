@@ -25,6 +25,7 @@ import { productSchema } from "@/schemas/productSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import urls from "@/lib/urls";
+import { set } from "date-fns";
 
 interface ProductDialogProps {
   open: boolean;
@@ -57,6 +58,7 @@ export function ProductDialog({
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [chooseFileDialog, setChooseFileDialog] = useState(false);
+  const [productId, setProductId] = useState("");
 
   type ProductFormValues = z.infer<typeof productSchema>;
   console.log(defaultValues, "product default values");
@@ -74,6 +76,7 @@ export function ProductDialog({
   useEffect(() => {
     if (defaultValues) {
       reset(defaultValues);
+      setProductId(defaultValues.id);
     } else {
       reset({
         name: "",
@@ -94,8 +97,11 @@ export function ProductDialog({
     const postData: any = {
       data,
     };
-    if (defaultValues?.id) {
-      postData.id = defaultValues.id;
+    // if (defaultValues?.id) {
+    //   postData.id = defaultValues.id;
+    // }
+    if (mode === "edit") {
+      postData.id = productId;
     }
     if (selectedFile) {
       postData.photo = selectedFile;
