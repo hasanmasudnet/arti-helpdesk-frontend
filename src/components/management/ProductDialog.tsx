@@ -56,6 +56,7 @@ export function ProductDialog({
   const [formData, setFormData] = useState(defaultValues ? defaultValues : {});
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [chooseFileDialog, setChooseFileDialog] = useState(false);
 
   type ProductFormValues = z.infer<typeof productSchema>;
   console.log(defaultValues, "product default values");
@@ -100,6 +101,7 @@ export function ProductDialog({
       postData.photo = selectedFile;
     }
     await onSubmit(postData);
+    reset();
     setLoading(false);
     onOpenChange(false);
   };
@@ -127,10 +129,13 @@ export function ProductDialog({
                         : `${urls.baseUrl}/${defaultValues?.image}`
                     }` || "/placeholder.jpg"
                   }
-                  alt={`${selectedFile ? selectedFile.name : "Product Image"}`}
+                  alt={`${selectedFile ? selectedFile.name : "Choose Image"}`}
                   className="object-cover rounded-lg border min-w-[260px] w-full h-[200px]"
                 />
-                <Dialog>
+                <Dialog
+                  open={chooseFileDialog}
+                  onOpenChange={setChooseFileDialog}
+                >
                   <DialogTrigger asChild>
                     <Button
                       size="icon"
@@ -150,7 +155,10 @@ export function ProductDialog({
                     <Input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => setSelectedFile(e.target?.files[0])}
+                      onChange={(e) => {
+                        setSelectedFile(e.target?.files[0]);
+                        setChooseFileDialog(false);
+                      }}
                     />
                     {/* <div className="mt-4 flex justify-end">
                       <Button

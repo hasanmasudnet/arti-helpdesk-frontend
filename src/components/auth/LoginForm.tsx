@@ -10,12 +10,15 @@ import { z } from "zod";
 import { signInSchema } from "@/schemas/signInSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { set } from "date-fns";
+import { ToastContainer, toast } from "react-toastify";
 
 const LoginForm = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [backendError, setBackendError] = useState<string | null>(null);
 
   type SignInFormValues = z.infer<typeof signInSchema>;
 
@@ -30,15 +33,17 @@ const LoginForm = () => {
   const onSubmit = async ({ email, password }: SignInFormValues) => {
     setLoading(true);
     try {
-      const response = await login(email, password);
+      const response: any = await login(email, password);
+      toast.error(response);
     } catch (err) {
-      console.log(err);
+      console.log(err, "ssssss");
     }
     setLoading(false);
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <ToastContainer autoClose={1750} />
       <div className="grid gap-2">
         <div className="grid gap-1">
           <Label htmlFor="username">Email</Label>
@@ -76,6 +81,9 @@ const LoginForm = () => {
               {...register("password")}
               className="pr-10"
             />
+            {backendError && (
+              <p className="text-red-500 text-sm mt-1">{backendError}</p>
+            )}
             <Button
               type="button"
               variant="ghost"

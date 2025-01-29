@@ -79,7 +79,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return error;
         }
       }
-    } catch (error) {}
+    } catch (error) {
+      console.log(error, "error msg");
+      return error?.response?.data?.message;
+    }
   };
 
   const logout = () => {

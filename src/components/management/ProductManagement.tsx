@@ -30,6 +30,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import urls from "@/lib/urls";
 import { apiInstance } from "@/lib/apiInstance";
+import { ToastContainer, toast } from "react-toastify";
 import Alert from "../Alert";
 import { set } from "date-fns";
 import { on } from "events";
@@ -205,12 +206,23 @@ const ProductManagement = () => {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      const response = await apiInstance.get("/products");
+      console.log(response, "response");
+      setProducts(response?.data?.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const handleAddCategory = useCallback(
     async (data) => {
       const postData = { name: data?.name, description: data?.description };
       try {
         const response = await apiInstance.post("/categories", postData);
         console.log(response, "response");
+        toast.success("Category added successfully");
         fetchCategories();
       } catch (error) {
         console.log(error);
@@ -227,6 +239,7 @@ const ProductManagement = () => {
         postData
       );
       fetchCategories();
+      toast.success("Category updated successfully");
     } catch (error) {
       console.log(error);
     }
@@ -236,6 +249,7 @@ const ProductManagement = () => {
     try {
       const response = await apiInstance.delete(`/categories/${categoryId}`);
       fetchCategories();
+      toast.success("Category deleted successfully");
     } catch (error) {
       console.log(error);
     }
@@ -264,11 +278,14 @@ const ProductManagement = () => {
         formData.append("price", price);
         formData.append("ai_instructions", ai_instructions);
         formData.append("category_id", category_id);
+        formData.append("description", description);
         if (photo) {
           formData.append("image", photo);
         }
 
         const response = await apiInstance.post("/products", formData);
+        toast.success("product added successfully");
+        fetchProducts();
       } catch (error) {
         console.log(error, "error");
       }
@@ -328,16 +345,6 @@ const ProductManagement = () => {
   }, []);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await apiInstance.get("/products");
-        console.log(response, "response");
-        setProducts(response?.data?.data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
     fetchProducts();
   }, []);
 
@@ -345,6 +352,7 @@ const ProductManagement = () => {
 
   return (
     <div className="min-h-screen bg-background p-4 lg:p-8">
+      <ToastContainer autoClose={1450} />
       <div className="max-w-[1400px] mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold text-foreground">
