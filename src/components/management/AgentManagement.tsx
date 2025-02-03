@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,22 +20,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const generateMockAgents = (count: number) => {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `${i + 1}`,
-    name: `Agent ${i + 1}`,
-    email: `agent${i + 1}@example.com`,
-    status: ["available", "busy", "offline"][Math.floor(Math.random() * 3)],
-    role: ["senior", "junior", "lead"][Math.floor(Math.random() * 3)],
-    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.random()}`,
-    activeTickets: Math.floor(Math.random() * 10),
-    resolvedToday: Math.floor(Math.random() * 20),
-    department: ["Support", "Technical", "Billing"][
-      Math.floor(Math.random() * 3)
-    ],
-  }));
-};
+import { apiInstance } from "@/lib/apiInstance";
+import urls from "@/lib/urls";
 
 const AgentCard = ({ agent, onEdit, onDelete }) => (
   <div className="bg-card p-4 rounded-lg space-y-3 hover:shadow-md transition-all border border-border">
@@ -46,14 +32,14 @@ const AgentCard = ({ agent, onEdit, onDelete }) => (
           <Badge
             variant="outline"
             className={`text-xs ${
-              agent.status === "available"
+              agent.status ===  1
                 ? "border-green-500 text-green-500"
-                : agent.status === "busy"
+                : agent.status === 2
                   ? "border-yellow-500 text-yellow-500"
                   : "border-gray-500 text-gray-500"
             }`}
           >
-            {agent.status}
+            {agent.status == 1 ? "available" : agent?.status == 2 ? "busy" : "offline"}
           </Badge>
           <span className="text-xs text-muted-foreground">
             {agent.department}
@@ -63,7 +49,7 @@ const AgentCard = ({ agent, onEdit, onDelete }) => (
       <div className="flex items-center gap-2">
         <div className="relative">
           <img
-            src={agent.avatar}
+            src={`${urls.baseUrl}/${agent?.image}`}
             alt={agent.name}
             className="w-8 h-8 rounded-full ring-2 ring-background"
           />
@@ -127,24 +113,40 @@ const AgentColumn = ({ title, agents, icon: Icon, onEdit, onDelete }) => (
 const AgentManagement = () => {
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [agentDialogOpen, setAgentDialogOpen] = useState(false);
-  const [agents, setAgents] = useState(generateMockAgents(15));
+  const [agents, setAgents] = useState([]);
   const [selectedAgent, setSelectedAgent] = useState(null);
 
   const getAgentsByStatus = (status: string) => {
-    return agents.filter((a) => a.status === status);
+    return agents.filter((a) => +a.status === +status);
   };
+
+  console.log(agents, "agents")
+
+  const getAgents = async() => {
+    try {
+      const response = await apiInstance.get("/agents");
+      console.log(response?.data?.data, "agents++")
+      setAgents(response?.data?.data)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(() => {
+    getAgents();
+  }, [])
 
   const columns = [
     {
       title: "Available",
       icon: CheckCircle2,
-      agents: getAgentsByStatus("available"),
+      agents: getAgentsByStatus("1"),
     },
-    { title: "Busy", icon: Clock, agents: getAgentsByStatus("busy") },
+    { title: "Busy", icon: Clock, agents: getAgentsByStatus("2") },
     {
       title: "Offline",
       icon: AlertCircle,
-      agents: getAgentsByStatus("offline"),
+      agents: getAgentsByStatus("3"),
     },
   ];
 

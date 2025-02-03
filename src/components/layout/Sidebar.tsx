@@ -23,7 +23,7 @@ import {
 const Sidebar = () => {
   const location = useLocation();
   const { user } = useAuth();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const allNavigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
